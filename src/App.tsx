@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState,useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
@@ -11,19 +11,26 @@ function App() {
   const [file,setFile] = useState(null)
   const [fileName,setFileName] = useState(null)
   const [taskId, setTaskId] = useState("")
+  const [Result, setResult] = useState("")
+  const [Loading, setLoading] = useState(false)
+  
 
-
-  function update_file(res){
-    console.log(res);
-    setFileName(res.headers.get("Content-Disposition").split('filename=')[1]);
-    // res..then(data => console.log(data));
-    // setFileName(res.headers.get('Content-Disposition').split('filename=')[1]);
-    res.blob().then(data => setFile(URL.createObjectURL(data)));
-    
+  const update_file = (Result) =>{
+    console.log(Result);
+    setFileName(Result.title);
+    // console.log(Result.data);
+    const byteCharacters = atob(Result.data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'application/octet-stream' }); // Adjust type as per your file type
+    setFile(URL.createObjectURL(blob))
 
   };
 
-  function submit_handler (){
+  const submit_handler = () =>{
     setFile(null)
     console.log(text)
     fetch('http://127.0.0.1:5000/ankify', {
@@ -39,6 +46,38 @@ function App() {
     }).then(res => res.json()).then(json => setTaskId(json["result_id"])); //returns array of data
     //  .then(data => update_file(data)); //assign state to array res
   };
+
+
+  const pollTask = async (id) => {
+
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/result/${id}`);
+        const data = await response.json();
+        // console.log(data)
+        setLoading(true);
+        if (data.ready != true) {
+            setTimeout(() => pollTask(id), 2000);  // Poll every 2 seconds
+        } else {
+            // console.log(data)
+            setLoading(false);
+            setResult(data.value);
+            console.log(data.value);
+            update_file(data.value);
+            
+            
+        }
+    } catch (error) {
+        console.error("Error polling task:", error);
+        setLoading(false);
+    }
+};
+
+useEffect(() => {
+    if (taskId) {
+        pollTask(taskId);
+    }
+}, [taskId]);
+
   function dl_link(){
     if (file == null){
       return ""
@@ -48,13 +87,9 @@ function App() {
 
   }
   return (
-    <div>
-      {/* <Box zIndex={0} borderRadius='100%' bg='tomato' color='white' pt={100} w={"50%"} h={"50%"}>
-
-    </Box> */}
-            
+    <div>   
   
-      <Box zIndex={1} m={"15%"} > 
+      <Box zIndex={1} m={"10%"} > 
       <SimpleGrid columns={{sm:1,md:2}} spacing={10}>
       <Box>
         <Stack width={"100%"}>
@@ -68,7 +103,8 @@ function App() {
             
           </Stack>
         </Box>
-        {file && <Box><Button><a href={file}　download={fileName}>Download: {fileName}</a></Button></Box>}
+        {Loading && <Box><p>Creating anki deck...</p></Box>}
+        {file && <Box ><Button><a href={file}　download={fileName}>Download: {fileName}</a></Button></Box>}
      
         </SimpleGrid>
       </Box>
