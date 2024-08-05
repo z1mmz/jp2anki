@@ -1,21 +1,17 @@
 import { useState,useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
-import { Box, Stack, Input,Textarea,SimpleGrid, Flex, Button, Heading} from "@chakra-ui/react"
+import { Box, Stack, Input,Textarea,SimpleGrid, Button, Heading} from "@chakra-ui/react"
 
 function App() {
-  const [count, setCount] = useState(0)
   const [text, setText] = useState("")
   const [title,setTitle] = useState("")
-  const [file,setFile] = useState(null)
+  const [file,setFile] = useState(String)
   const [fileName,setFileName] = useState(null)
   const [taskId, setTaskId] = useState("")
-  const [Result, setResult] = useState("")
   const [Loading, setLoading] = useState(false)
   
 
-  const update_file = (Result) =>{
+  const update_file = (Result:any) =>{
     console.log(Result);
     setFileName(Result.title);
     // console.log(Result.data);
@@ -25,13 +21,13 @@ function App() {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
     }
     const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'application/octet-stream' }); // Adjust type as per your file type
+    const blob = new Blob([byteArray], { type: 'application/octet-stream' }); 
     setFile(URL.createObjectURL(blob))
 
   };
 
   const submit_handler = () =>{
-    setFile(null)
+    setFile("")
     console.log(text)
     fetch('http://127.0.0.1:5000/ankify', {
     method: 'POST',
@@ -48,7 +44,7 @@ function App() {
   };
 
 
-  const pollTask = async (id) => {
+  const pollTask = async (id:string) => {
 
     try {
         const response = await fetch(`http://127.0.0.1:5000/result/${id}`);
@@ -60,7 +56,6 @@ function App() {
         } else {
             // console.log(data)
             setLoading(false);
-            setResult(data.value);
             console.log(data.value);
             update_file(data.value);
             
@@ -78,14 +73,14 @@ useEffect(() => {
     }
 }, [taskId]);
 
-  function dl_link(){
-    if (file == null){
-      return ""
-    }else{
-      return <a href={file} download="a.apkg"></a>
-    }
+  // function dl_link(){
+  //   if (file == null){
+  //     return ""
+  //   }else{
+  //     return <a href={file} download="a.apkg"></a>
+  //   }
 
-  }
+  // }
   return (
     <div>   
   
@@ -96,7 +91,7 @@ useEffect(() => {
           <Heading fontWeight={800} fontSize={{md:32}}>Japanese to Anki</Heading>
 
               <Input width={{sm:"100%",md:"60%"}} onChange={e => setTitle(e.target.value)}></Input>
-              <Textarea onChange={e => setText(e.target.value)} rows="5" cols="50"></Textarea>
+              <Textarea onChange={e => setText(e.target.value)} rows={5} cols={50} ></Textarea>
               <Box justifyContent={"right"} display={"flex"}>
               <Button width={{sm:"100%",md:"60%"}} onClick={submit_handler} >Create Anki deck</Button>
               </Box>
