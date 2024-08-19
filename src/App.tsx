@@ -29,7 +29,7 @@ function App() {
   const submit_handler = () =>{
     setFile("")
     console.log(text)
-    fetch('https://wolfz.synology.me:8000/ankify', {
+    fetch('https://wolfz.synology.me/ankify', {
     method: 'POST',
     headers: {
       'Accept': 'application/json',
@@ -47,7 +47,7 @@ function App() {
   const pollTask = async (id:string) => {
 
     try {
-        const response = await fetch(`https://wolfz.synology.me:8000/result/${id}`);
+        const response = await fetch(`https://wolfz.synology.me/result/${id}`);
         const data = await response.json();
         // console.log(data)
         setLoading(true);
