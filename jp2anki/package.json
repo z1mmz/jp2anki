@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "anki-apkg-export": "^4.0.3",
     "fflate": "^0.8.2",
+    "genanki-js": "^2.0.0",
     "kuromoji": "^0.1.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

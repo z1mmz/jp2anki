@@ -4,7 +4,7 @@ import Controls from "./components/Controls";
 import WordList from "./components/WordList";
 import { extractWords, dedupe } from "./services/tokenizer";
 import { lookupLemma } from "./services/jmdict";
-import { Word } from "./types";
+import type { Word } from "./types";
 
 export default function App() {
   const [text, setText] = useState("");
