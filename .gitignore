@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# JMDict dictionary (large file, download via npm run download:jmdict)
+server/data/jmdict_english.zip
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
