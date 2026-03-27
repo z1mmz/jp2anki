@@ -21,8 +21,8 @@ export default function App() {
     try {
       const words = await extractWords(text);
       setRawWords(words);
-    } catch (e: any) {
-      setError(String(e.message || e));
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
@@ -49,8 +49,12 @@ export default function App() {
   }, [uniqueWords]);
 
   const onDownload = async () => {
-    const { downloadDeck } = await import("./services/anki");
-    await downloadDeck("JP Deck from Text", uniqueWords, defs);
+    try {
+      const { downloadDeck } = await import("./services/anki");
+      await downloadDeck("JP Deck from Text", uniqueWords, defs);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   return (

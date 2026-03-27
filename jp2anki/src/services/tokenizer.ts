@@ -9,7 +9,7 @@ let tokenizerPromise: Promise<kuromoji.Tokenizer<KuromojiToken>> | null = null;
 export function getTokenizer() {
   if (tokenizerPromise) return tokenizerPromise;
   tokenizerPromise = new Promise((resolve, reject) => {
-    kuromoji.builder({ dicPath: "/kuromoji" }).build((err: Error | null, tokenizer: any) => {
+    kuromoji.builder({ dicPath: "/kuromoji" }).build((err: Error | null, tokenizer: unknown) => {
       if (err) reject(err);
       else resolve(tokenizer as unknown as kuromoji.Tokenizer<KuromojiToken>);
     });

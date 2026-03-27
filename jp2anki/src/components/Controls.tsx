@@ -1,5 +1,3 @@
-import React from "react";
-
 type Props = {
   canExtract: boolean;
   canDownload: boolean;

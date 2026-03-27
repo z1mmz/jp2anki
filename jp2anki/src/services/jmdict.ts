@@ -25,9 +25,10 @@ export async function getJmdictIndex(): Promise<Map<string, JmdictEntry[]>> {
     for (const name of Object.keys(files)) {
       if (!/^term_bank_.*\.json$/.test(name)) continue;
       const text = new TextDecoder("utf-8").decode(files[name]);
-      const rows = JSON.parse(text) as any[];
+      const rows = JSON.parse(text) as unknown[];
 
       for (const row of rows) {
+        if (!Array.isArray(row)) continue;
         const expression = String(row[0] ?? "");
         const reading    = row[1] ? String(row[1]) : undefined;
         const defGroups  = Array.isArray(row[2]) ? row[2] : [];
