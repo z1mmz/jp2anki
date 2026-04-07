@@ -10,6 +10,7 @@ interface KuromojiToken {
   basic_form: string;
   reading?: string | null;
   pos?: string;
+  pos_detail_1?: string;
 }
 
 let tokenizerPromise: Promise<kuromoji.Tokenizer<KuromojiToken>> | null = null;
@@ -37,14 +38,22 @@ export async function extractWords(text: string): Promise<Word[]> {
   const tokenizer = await getTokenizer();
   const tokens = tokenizer.tokenize(text) as unknown as KuromojiToken[];
 
-  const content = tokens.filter(
-    t => !["記号", "助詞", "助動詞"].includes(String(t.pos))
-  );
+  const STOP_POS = new Set(["記号", "助詞", "助動詞", "接続詞", "感動詞", "連体詞"]);
+  const STOP_NOUN_D1 = new Set(["非自立", "数", "接尾"]);
+
+  const content = tokens.filter(t => {
+    const pos = String(t.pos);
+    if (STOP_POS.has(pos)) return false;
+    const d1 = String(t.pos_detail_1 ?? "");
+    if (pos === "名詞" && STOP_NOUN_D1.has(d1)) return false;
+    if (pos === "動詞" && d1 === "非自立") return false;
+    return true;
+  });
 
   return content
     .map(t => {
       const lemma = t.basic_form && t.basic_form !== "*" ? t.basic_form : t.surface_form;
-      const readingHira = t.reading ? toHiragana(t.reading) : "";
+      const readingHira = (t.reading && t.reading !== "*") ? toHiragana(t.reading) : "";
       return { lemma, surface: t.surface_form, readingHira };
     })
     .filter(w => isJapanese(w.lemma));

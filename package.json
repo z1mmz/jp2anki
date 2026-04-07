@@ -1,14 +1,21 @@
 {
   "name": "jp2anki",
   "private": true,
-  "workspaces": ["client", "server"],
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
     "dev": "concurrently -n client,server -c cyan,yellow \"npm run dev -w client\" \"npm run dev -w server\"",
     "build": "npm run build -w server && npm run build -w client",
     "start": "npm run start -w server",
-    "download:jmdict": "node scripts/download-jmdict.js"
+    "download:jmdict": "node scripts/download-jmdict.js",
+    "test": "vitest"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
+  },
+  "dependencies": {
+    "vitest": "^4.1.2"
   }
 }

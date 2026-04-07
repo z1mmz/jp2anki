@@ -27,11 +27,25 @@ app.post("/api/extract", async (req, res) => {
 
     const result: ExtractedWord[] = await Promise.all(
       words.map(async w => {
-        const entries = await lookupLemma(w.lemma);
-        const best =
-          (w.readingHira && entries?.find(e => e.reading === w.readingHira)) ||
-          entries?.[0];
-        return { ...w, glosses: best?.glosses ?? [] };
+        // Fall back to surface form when the lemma isn't in the dictionary
+        const entries =
+          (await lookupLemma(w.lemma)) ??
+          (w.surface !== w.lemma ? await lookupLemma(w.surface) : null);
+
+        // Collect glosses from all entries that match the token's reading,
+        // so we don't arbitrarily pick one entry and miss synonyms/nuances.
+        const pool = entries
+          ? (w.readingHira
+              ? entries.filter(e => !e.reading || e.reading === w.readingHira)
+              : entries
+            ).length
+            ? entries.filter(e => !e.reading || e.reading === w.readingHira)
+            : entries
+          : [];
+
+        // Deduplicate and cap at 5 glosses
+        const glosses = [...new Set(pool.flatMap(e => e.glosses))].slice(0, 5);
+        return { ...w, glosses };
       })
     );
 

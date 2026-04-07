@@ -1,22 +1,28 @@
-import { useState } from "react";
-import TextArea from "./components/TextArea";
-import Controls from "./components/Controls";
-import WordList from "./components/WordList";
+import { useState, useRef } from "react";
 import { extractWords, downloadDeck } from "./services/api";
 import type { ExtractedWord } from "./services/api";
+import WordItem from "./components/WordItem";
+import "./App.css";
+
+type Phase = "input" | "words" | "sucking";
 
 export default function App() {
   const [text, setText] = useState("");
   const [words, setWords] = useState<ExtractedWord[]>([]);
+  const [phase, setPhase] = useState<Phase>("input");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [buttonPos, setButtonPos] = useState<{ x: number; y: number } | null>(null);
+  const downloadBtnRef = useRef<HTMLButtonElement>(null);
 
   const onExtract = async () => {
     if (!text.trim()) return;
     setBusy(true);
     setError(null);
     try {
-      setWords(await extractWords(text));
+      const result = await extractWords(text);
+      setWords(result);
+      setPhase("words");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -25,37 +31,75 @@ export default function App() {
   };
 
   const onDownload = async () => {
-    setBusy(true);
-    try {
-      await downloadDeck(words);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
+    if (!downloadBtnRef.current || phase === "sucking") return;
+    const rect = downloadBtnRef.current.getBoundingClientRect();
+    setButtonPos({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+    setPhase("sucking");
+
+    const animDuration = 55 + words.length * 40 + 550;
+    setTimeout(async () => {
+      try {
+        await downloadDeck(words);
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setPhase("words");
+        setButtonPos(null);
+      }
+    }, animDuration);
   };
 
-  // Build defs map for WordList (glosses are already on each word)
-  const defs: Record<string, string[]> = {};
-  for (const w of words) defs[w.lemma] = w.glosses;
+  const isWords = phase === "words" || phase === "sucking";
 
   return (
-    <div className="min-h-screen flex flex-col items-center px-6 py-10 font-sans">
-      <div className="w-full max-w-2xl">
-        <h1 className="text-2xl font-bold mb-6">Japanese → Anki Deck</h1>
-
-        <TextArea value={text} onChange={setText} />
-        <Controls
-          canExtract={!!text.trim()}
-          canDownload={words.length > 0}
-          busy={busy}
-          onExtract={onExtract}
-          onDownload={onDownload}
+    <div className={`app${isWords ? " app--split" : ""}`}>
+      <div className={`input-panel${isWords ? " input-panel--collapsed" : ""}`}>
+        {!isWords && <h1 className="app-title">Japanese → Anki</h1>}
+        {isWords && <span className="panel-label">Input</span>}
+        <textarea
+          className="main-textarea"
+          placeholder="Paste Japanese text here…"
+          value={text}
+          onChange={e => setText(e.target.value)}
+          readOnly={isWords}
         />
-
-        {error && <div className="text-red-600 mb-3">{error}</div>}
-        <WordList words={words} defs={defs} />
+        {!isWords && (
+          <button
+            className="btn-extract"
+            onClick={onExtract}
+            disabled={!text.trim() || busy}
+          >
+            {busy ? "Analysing…" : "Extract words →"}
+          </button>
+        )}
+        {error && <p className="error-msg">{error}</p>}
       </div>
+
+      {isWords && (
+        <div className="cards-panel">
+          <div className="cards-grid">
+            {words.map((w, i) => (
+              <WordItem
+                key={w.lemma}
+                word={w}
+                sucking={phase === "sucking"}
+                suckDelay={i * 40}
+                buttonPos={buttonPos}
+              />
+            ))}
+          </div>
+          <div className="bottom-bar">
+            <button
+              ref={downloadBtnRef}
+              className="btn-download"
+              onClick={onDownload}
+              disabled={phase === "sucking"}
+            >
+              {phase === "sucking" ? "Creating…" : "Create Anki Deck"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
